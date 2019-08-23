@@ -1,0 +1,77 @@
+{
+	"multipart": [
+		{
+			"when": { "facing": "north", "front": true },
+			"apply": { "model": "united-conveyors:block/front" }
+		},
+		{
+			"when": { "facing": "east", "front": true },
+			"apply": { "model": "united-conveyors:block/front", "y": 90 }
+		},
+		{
+			"when": { "facing": "south", "front": true },
+			"apply": { "model": "united-conveyors:block/front", "y": 180 }
+		},
+		{
+			"when": { "facing": "west", "front": true },
+			"apply": { "model": "united-conveyors:block/front", "y": 270 }
+		},
+
+
+
+		{
+			"when": { "facing": "north", "front": false },
+			"apply": { "model": "united-conveyors:block/no_front" }
+		},
+		{
+			"when": { "facing": "east", "front": false },
+			"apply": { "model": "united-conveyors:block/no_front", "y": 90 }
+		},
+		{
+			"when": { "facing": "south", "front": false },
+			"apply": { "model": "united-conveyors:block/no_front", "y": 180 }
+		},
+		{
+			"when": { "facing": "west", "front": false },
+			"apply": { "model": "united-conveyors:block/no_front", "y": 270 }
+		},
+
+
+
+		{
+			"when": { "facing": "north", "rear": true },
+			"apply": { "model": "united-conveyors:block/rear" }
+		},
+		{
+			"when": { "facing": "east", "rear": true },
+			"apply": { "model": "united-conveyors:block/rear", "y": 90 }
+		},
+		{
+			"when": { "facing": "south", "rear": true },
+			"apply": { "model": "united-conveyors:block/rear", "y": 180 }
+		},
+		{
+			"when": { "facing": "west", "rear": true },
+			"apply": { "model": "united-conveyors:block/rear", "y": 270 }
+		},
+
+
+
+		{
+			"when": { "facing": "north", "rear": false },
+			"apply": { "model": "united-conveyors:block/no_rear" }
+		},
+		{
+			"when": { "facing": "east", "rear": false },
+			"apply": { "model": "united-conveyors:block/no_rear", "y": 90 }
+		},
+		{
+			"when": { "facing": "south", "rear": false },
+			"apply": { "model": "united-conveyors:block/no_rear", "y": 180 }
+		},
+		{
+			"when": { "facing": "west", "rear": false },
+			"apply": { "model": "united-conveyors:block/no_rear", "y": 270 }
+		}
+	]
+}

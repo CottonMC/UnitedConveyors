@@ -1,29 +1,31 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "united-conveyors",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "United Conveyors",
+  "description": "A straightforward conveyor mod",
   "authors": [
-    "Me!"
+    "Falkreon"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/CottonMC/UnitedConveyors",
+    "sources": "https://github.com/CottonMC/UnitedConveyors"
   },
 
-  "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "license": "MIT",
+  "icon": "assets/united-conveyors/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleMod"
+      "io.github.cottonmc.conveyors.UnitedConveyors"
+    ],
+    "client": [
+      "io.github.cottonmc.conveyors.UnitedConveyorsClient"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
   ],
 
   "depends": {
