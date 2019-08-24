@@ -1,6 +1,7 @@
 package io.github.cottonmc.conveyors;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.fabricmc.fabric.api.block.FabricBlockSettings;
@@ -10,9 +11,13 @@ import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityContext;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateFactory.Builder;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
@@ -39,7 +44,7 @@ public class ConveyorBlock extends Block implements BlockEntityProvider {
 	private static Map<BlockState, VoxelShape> STATE_TO_SHAPE = new HashMap<>();
 	
 	public ConveyorBlock() {
-		super(FabricBlockSettings.copy(Blocks.GRAY_CONCRETE).dynamicBounds().breakByTool(FabricToolTags.PICKAXES).build());
+		super(FabricBlockSettings.copy(Blocks.GRAY_CONCRETE).dynamicBounds().breakByTool(FabricToolTags.PICKAXES, 0).build());
 	}
 	
 	@Override
@@ -97,5 +102,48 @@ public class ConveyorBlock extends Block implements BlockEntityProvider {
 	@Override
 	public boolean isOpaque(BlockState state) {
 		return false;
+	}
+	
+	@Override
+	public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+		if (!world.isClient) {
+			if (!player.abilities.creativeMode) {
+				BlockEntity be = world.getBlockEntity(pos);
+				if (be!=null && be instanceof ConveyorBlockEntity) {
+					ItemStack toDrop = ((ConveyorBlockEntity)be).stack;
+					if (!toDrop.isEmpty()) {
+						Block.dropStack(world, pos, toDrop);
+					}
+				}
+			}
+		}
+		super.onBreak(world, pos, state, player);
+	}
+	
+	@Override
+	public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
+		
+		if (entity instanceof ItemEntity && !world.isClient) {
+			BlockEntity be = world.getBlockEntity(pos);
+			if (be instanceof ConveyorBlockEntity) {
+				((ConveyorBlockEntity)be).offerItemEntity((ItemEntity) entity);
+			}
+		} else {
+			Direction d = state.get(Properties.HORIZONTAL_FACING);
+			float magnitude = 0.05f;
+			entity.addVelocity(d.getOffsetX()*magnitude, d.getOffsetY()*magnitude, d.getOffsetZ()*magnitude);
+		}
+		
+		
+		super.onEntityCollision(state, world, pos, entity);
+	}
+	
+	@Override
+	public List<ItemStack> getDroppedStacks(BlockState blockState_1, net.minecraft.world.loot.context.LootContext.Builder lootContext$Builder_1) {
+		
+		List<ItemStack> result = super.getDroppedStacks(blockState_1, lootContext$Builder_1);
+		System.out.println(result);
+		
+		return result;
 	}
 }
