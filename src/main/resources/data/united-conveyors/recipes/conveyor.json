@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "united-conveyors:conveyor",
+  "pattern": [
+    "LLL",
+    "SRS"
+  ],
+  "key": {
+    "L": { "item": "leather" },
+    "S": { "item": "redstone" },
+    "R": { "item": "rail" }
+  },
+  "result": {
+    "item": "united-conveyors:conveyor",
+    "count": 3
+  }
+}
