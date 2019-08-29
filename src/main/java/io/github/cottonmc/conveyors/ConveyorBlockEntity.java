@@ -1,11 +1,13 @@
 package io.github.cottonmc.conveyors;
 
+import alexiil.mc.lib.attributes.AttributeList;
+import alexiil.mc.lib.attributes.AttributeProvider;
 import alexiil.mc.lib.attributes.SearchOptions;
 import alexiil.mc.lib.attributes.Simulation;
 import alexiil.mc.lib.attributes.item.ItemAttributes;
 import alexiil.mc.lib.attributes.item.ItemExtractable;
 import alexiil.mc.lib.attributes.item.ItemInsertable;
-import alexiil.mc.lib.attributes.item.ItemStackUtil;
+import alexiil.mc.lib.attributes.item.impl.EmptyItemExtractable;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ComposterBlock;
@@ -19,8 +21,9 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.util.Tickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 
-public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, Tickable {
+public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, Tickable, AttributeProvider {
 	public static final int TAG_TYPE_COMPOUND = 10;
 	public static final int TAG_TYPE_NUMBER = 99;
 	
@@ -114,13 +117,27 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 						if (be instanceof ConveyorBlockEntity) {
 							ConveyorBlockEntity other = (ConveyorBlockEntity) be;
 							if (other.stack.isEmpty()) {
-								other.stack = stack.copy();
-								other.delay = other.maxDelay;
-								this.stack = ItemStack.EMPTY;
-								other.markDirty();
-								other.sync();
-								markDirty();
-								sync();
+								//Should we insert it at full or half delay?
+								boolean doHandoff = true;
+								Direction aheadFacing = aheadState.get(Properties.HORIZONTAL_FACING);
+								int otherDelay = other.maxDelay;
+								if (facing!=aheadFacing) {
+									if (facing==aheadFacing.getOpposite()) {
+										doHandoff = false;
+									} else {
+										otherDelay = maxDelay / 2;
+									}
+								}
+								
+								if (doHandoff) {
+									other.stack = stack.copy();
+									other.delay = otherDelay;
+									this.stack = ItemStack.EMPTY;
+									other.markDirty();
+									other.sync();
+									markDirty();
+									sync();
+								}
 							}
 						}
 					}
@@ -164,96 +181,29 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 					this.markDirty();
 					this.sync();
 				}
-				/*
-				if (behindState.getBlock() instanceof ChestBlock) {
-					Inventory inv = ChestBlock.getInventory(behindState, world, behind, false);
-					if (extractFrom(inv)) {
+			}
+		}
+		
+		if (this.stack.isEmpty()) {
+			//Still empty?! Look for hoppers above
+			BlockState up = world.getBlockState(pos.up());
+			if (up.getBlock() instanceof HopperBlock) {
+				if (up.get(Properties.HOPPER_FACING)==Direction.DOWN && up.get(Properties.ENABLED).equals(Boolean.TRUE)) {
+					ItemExtractable extractable = ItemAttributes.EXTRACTABLE.get(world, pos.up(), SearchOptions.inDirection(Direction.UP));
+					ItemStack stack = extractable.attemptAnyExtraction(64, Simulation.ACTION);
+					if (!stack.isEmpty()) {
+						this.stack = stack;
+						this.delay = maxDelay / 2;
 						this.markDirty();
 						this.sync();
 					}
-				} else {
-					BlockEntity be = world.getBlockEntity(behind);
-					if (be!=null && be instanceof Inventory) {
-						if (extractFrom((Inventory) be)) {
-							this.markDirty();
-							this.sync();
-						}
-					}
-				}*/
+				}
 			}
 		}
 		
 		this.markDirty();
 		this.sync();
 	}
-	/*
-	public ItemStack extractFrom(World world, BlockPos pos, int limit) {
-		BlockState state = world.getBlockState(pos);
-		if (state.getBlock() instanceof ConveyorBlock) return ItemStack.EMPTY; //Don't ever extract from conveyors
-		if (state.getBlock() instanceof ChestBlock) {
-			Inventory inv = ChestBlock.getInventory(state, world, pos, false);
-			if (inv==null) return ItemStack.EMPTY;
-			if (extractFrom(inv)) {
-				markDirty();
-				sync();
-				return this.stack;
-			} else {
-				return ItemStack.EMPTY;
-			}
-		} else if (state.getBlock() instanceof InventoryProvider) {
-			SidedInventory sided = ((InventoryProvider)state.getBlock()).getInventory(state, world, pos);
-			if (sided==null) return ItemStack.EMPTY;
-			
-			
-			
-			
-		}
-		
-		return ItemStack.EMPTY;
-	}
-	
-	public boolean extractFrom(Inventory inv) {
-		for(int i=0; i<inv.getInvSize(); i++) {
-			ItemStack stack = inv.getInvStack(i);
-			if (!stack.isEmpty()) {
-				//Take some or all of the stack
-				this.stack = stack.copy();
-				inv.removeInvStack(i);
-				delay = maxDelay;
-				inv.markDirty();
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public boolean extractFromSided(SidedInventory inv, Direction d) {
-		for(int i : inv.getInvAvailableSlots(d)) {
-			ItemStack stack = inv.getInvStack(i);
-			if (!stack.isEmpty()) {
-				//Take some or all of the stack
-				this.stack = stack.copy();
-				inv.removeInvStack(i);
-				delay = maxDelay;
-				inv.markDirty();
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public boolean insertInto(Inventory inv) {
-		for(int i=0; i<inv.getInvSize(); i++) {
-			ItemStack stack = inv.getInvStack(i);
-			if (stack.isEmpty()) {
-				inv.setInvStack(i, this.stack);
-				this.stack = ItemStack.EMPTY;
-				inv.markDirty();
-				return true;
-			}
-		}
-		return false;
-	}*/
 	
 	public void offerItemEntity(ItemEntity entity) {
 		if (this.stack.isEmpty()) {
@@ -283,5 +233,26 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 	public float getProgress(float partialTicks) {
 		float adjustedDelay = delay-partialTicks; if (adjustedDelay<0) adjustedDelay = 0;
 		return adjustedDelay/(float)maxDelay;
+	}
+
+	@Override
+	public void addAllAttributes(World world, BlockPos pos, BlockState state, AttributeList<?> to) {
+		Direction dir = to.getSearchDirection();
+		if (dir==null) return; //We're not offering anything to omnidirectional searches
+		if (dir==Direction.UP) {
+			to.offer(new ConveyorInsertable(this));
+		} else if (dir==Direction.DOWN) {
+			to.offer(new ConveyorExtractable(this));
+		} else {
+			if (state.getBlock() instanceof ConveyorBlock) {
+				Direction facing = state.get(Properties.HORIZONTAL_FACING);
+				
+				if (dir==facing) {
+					to.offer(EmptyItemExtractable.SUPPLIER); //Don't call us, we'll call you.
+				} else if (dir==facing.getOpposite()) {
+					to.offer(new ConveyorInsertable(this));
+				}
+			}
+		}
 	}
 }

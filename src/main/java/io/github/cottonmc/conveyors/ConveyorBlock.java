@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import alexiil.mc.lib.attributes.SearchOptions;
+import alexiil.mc.lib.attributes.item.ItemAttributes;
 import net.fabricmc.fabric.api.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.tools.FabricToolTags;
 import net.minecraft.block.Block;
@@ -66,22 +68,31 @@ public class ConveyorBlock extends Block implements BlockEntityProvider {
 		
 		return this.getDefaultState()
 				.with(Properties.HORIZONTAL_FACING, context.getPlayerFacing())
-				.with(FRONT, canConnect(world, pos.offset(facing)))
-				.with(REAR, canConnect(world, pos.offset(facing.getOpposite())));
+				.with(FRONT, canConnectForwards(world, pos, facing))
+				.with(REAR, canConnectBackwards(world, pos, facing.getOpposite()));
 	}
 	
 	@Override
 	public BlockState getStateForNeighborUpdate(BlockState oldState, Direction dir, BlockState neighborState, IWorld world, BlockPos pos, BlockPos neighborPos) {
+		if (!(world instanceof World)) return oldState;
 		Direction facing = oldState.get(Properties.HORIZONTAL_FACING);
 		return oldState
-				.with(FRONT, canConnect(world, pos.offset(facing)))
-				.with(REAR, canConnect(world, pos.offset(facing.getOpposite())));
+				.with(FRONT, canConnectForwards((World)world, pos, facing))
+				.with(REAR, canConnectBackwards((World)world, pos, facing.getOpposite()));
 	}
 	
-	public boolean canConnect(IWorld world, BlockPos pos) {
-		if (world.getBlockState(pos).getBlock() instanceof ConveyorBlock) return true;
-		if (world.getBlockEntity(pos) instanceof Inventory) return true;
-		//TODO: Check for inventories and capability support
+	public boolean canConnectForwards(World world, BlockPos pos, Direction dir) {
+		if (world.getBlockState(pos.offset(dir)).getBlock() instanceof ConveyorBlock) return true;
+		if (ItemAttributes.INSERTABLE.getFirstOrNull(world, pos.offset(dir), SearchOptions.inDirection(dir))!=null) return true;
+		return false;
+	}
+	
+	public boolean canConnectBackwards(World world, BlockPos pos, Direction dir) {
+		if (world.getBlockState(pos.offset(dir)).getBlock() instanceof ConveyorBlock) return true;
+		if (world.getBlockState(pos.offset(dir.rotateYClockwise())).getBlock() instanceof ConveyorBlock) return true;
+		if (world.getBlockState(pos.offset(dir.rotateYCounterclockwise())).getBlock() instanceof ConveyorBlock) return true;
+		
+		if (ItemAttributes.EXTRACTABLE.getFirstOrNull(world, pos.offset(dir), SearchOptions.inDirection(dir))!=null) return true;
 		return false;
 	}
 	
@@ -128,14 +139,21 @@ public class ConveyorBlock extends Block implements BlockEntityProvider {
 			if (be instanceof ConveyorBlockEntity) {
 				((ConveyorBlockEntity)be).offerItemEntity((ItemEntity) entity);
 			}
+		} else if (entity instanceof PlayerEntity && world.isClient) {
+			if (!entity.isSneaking()) {
+				Direction d = state.get(Properties.HORIZONTAL_FACING);
+				accelerate(entity, d, 0.05f);
+			}
 		} else {
 			Direction d = state.get(Properties.HORIZONTAL_FACING);
-			float magnitude = 0.05f;
-			entity.addVelocity(d.getOffsetX()*magnitude, d.getOffsetY()*magnitude, d.getOffsetZ()*magnitude);
+			accelerate(entity, d, 0.05f);
 		}
 		
-		
 		super.onEntityCollision(state, world, pos, entity);
+	}
+	
+	private void accelerate(Entity entity, Direction d, float magnitude) {
+		entity.addVelocity(d.getOffsetX()*magnitude, d.getOffsetY()*magnitude, d.getOffsetZ()*magnitude);
 	}
 	
 	@Override
