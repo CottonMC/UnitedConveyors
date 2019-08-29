@@ -201,8 +201,8 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 			}
 		}
 		
-		this.markDirty();
-		this.sync();
+		//this.markDirty();
+		//this.sync();
 	}
 	
 	public void offerItemEntity(ItemEntity entity) {
