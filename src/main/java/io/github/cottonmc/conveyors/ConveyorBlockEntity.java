@@ -87,16 +87,18 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 		}
 		
 		if (!this.stack.isEmpty()) {
-			//Push our items down if there's a hopper with room below us
+			//Push our items down if there's an enabled hopper with room below us
 			BlockPos beneath = pos.down();
 			BlockState beneathState = world.getBlockState(beneath);
 			if (beneathState.getBlock() instanceof HopperBlock) {
-				ItemInsertable insertable = ItemAttributes.INSERTABLE.get(world, beneath, SearchOptions.inDirection(Direction.DOWN));
-				ItemStack stack = insertable.attemptInsertion(this.stack, Simulation.ACTION);
-				if (stack.isEmpty() || stack.getCount()!=this.stack.getCount()) {
-					this.stack = stack;
-					markDirty();
-					sync();
+				if (beneathState.get(Properties.ENABLED)) {
+					ItemInsertable insertable = ItemAttributes.INSERTABLE.get(world, beneath, SearchOptions.inDirection(Direction.DOWN));
+					ItemStack stack = insertable.attemptInsertion(this.stack, Simulation.ACTION);
+					if (stack.isEmpty() || stack.getCount()!=this.stack.getCount()) {
+						this.stack = stack;
+						markDirty();
+						sync();
+					}
 				}
 			}
 		}
@@ -142,7 +144,6 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 						}
 					}
 				} else if (aheadState.getBlock() instanceof ComposterBlock) {
-					//SidedInventory inv = ((ComposterBlock) aheadState.getBlock()).getInventory(aheadState, world, ahead);
 					ItemInsertable insertable = ItemAttributes.INSERTABLE.get(world, ahead, SearchOptions.inDirection(Direction.DOWN));
 					ItemStack stack = insertable.attemptInsertion(this.stack, Simulation.ACTION);
 					if (stack.isEmpty() || stack.getCount()!=this.stack.getCount()) {
@@ -171,23 +172,25 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 				
 				BlockPos behind = pos.offset(facing.getOpposite());
 				BlockState behindState = world.getBlockState(behind);
-				if (behindState.getBlock() instanceof ConveyorBlock) return; //Don't pull. We'll get a push
+				if (!(behindState.getBlock() instanceof ConveyorBlock)) { //Don't pull. We'll get a push
 				
-				ItemExtractable extractable = ItemAttributes.EXTRACTABLE.get(world, behind, SearchOptions.inDirection(facing.getOpposite()));
-				ItemStack stack = extractable.attemptAnyExtraction(64, Simulation.ACTION);
-				if (!stack.isEmpty()) {
-					this.stack = stack;
-					this.delay = maxDelay;
-					this.markDirty();
-					this.sync();
+					ItemExtractable extractable = ItemAttributes.EXTRACTABLE.get(world, behind, SearchOptions.inDirection(facing.getOpposite()));
+					ItemStack stack = extractable.attemptAnyExtraction(64, Simulation.ACTION);
+					if (!stack.isEmpty()) {
+						this.stack = stack;
+						this.delay = maxDelay;
+						this.markDirty();
+						this.sync();
+					}
 				}
 			}
 		}
 		
 		if (this.stack.isEmpty()) {
-			//Still empty?! Look for hoppers above
+			//Still empty?! Look for enabled hoppers above that are facing us
 			BlockState up = world.getBlockState(pos.up());
 			if (up.getBlock() instanceof HopperBlock) {
+				
 				if (up.get(Properties.HOPPER_FACING)==Direction.DOWN && up.get(Properties.ENABLED).equals(Boolean.TRUE)) {
 					ItemExtractable extractable = ItemAttributes.EXTRACTABLE.get(world, pos.up(), SearchOptions.inDirection(Direction.UP));
 					ItemStack stack = extractable.attemptAnyExtraction(64, Simulation.ACTION);
@@ -251,6 +254,10 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 					to.offer(EmptyItemExtractable.SUPPLIER); //Don't call us, we'll call you.
 				} else if (dir==facing.getOpposite()) {
 					to.offer(new ConveyorInsertable(this));
+				} else {
+					
+					
+					
 				}
 			}
 		}

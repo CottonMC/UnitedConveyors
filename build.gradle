@@ -29,9 +29,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modCompile "alexiil.mc.lib:libblockattributes-items:0.4.12"
-	include "alexiil.mc.lib:libblockattributes-core:0.4.12"
-	include "alexiil.mc.lib:libblockattributes-items:0.4.12"
+	modCompile "alexiil.mc.lib:libblockattributes-items:0.4.13"
+	include "alexiil.mc.lib:libblockattributes-core:0.4.13"
+	include "alexiil.mc.lib:libblockattributes-items:0.4.13"
 }
 
 processResources {
