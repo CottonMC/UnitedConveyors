@@ -209,6 +209,7 @@ public class ConveyorBlockEntity extends BlockEntity implements BlockEntityClien
 	}
 	
 	public void offerItemEntity(ItemEntity entity) {
+		if (!entity.isAlive()) return;
 		if (this.stack.isEmpty()) {
 			this.stack = entity.getStack().copy();
 			this.delay = maxDelay;
